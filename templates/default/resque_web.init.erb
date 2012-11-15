@@ -2,18 +2,12 @@
 # Author: Chris Roberts (<chris@hw-ops.com>)
 #
 # chkconfig: 345 99 1
-# Description: Resque pool
+# Description: Resque web
 # Provides: resque-web
 # Default-Start: 3 4 5
 # Default-Stop: 0 1 2 6
 
-START_EXEC="<%= 
-  "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
-  "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:web][:exec]) : node[:resque_tng][:web][:exec]} " <<
-  "--env #{node[:resque_tng][:environment]} --pid-file #{node[:resque_tng][:web][:pid_file]} " <<
-  "--port #{node[:resque_tng][:web][:port]} " <<
-  "#{"--server #{node[:resque_tng][:web][:server]}" if node[:resque_tng][:web][:server]}"
-%>"
+START_EXEC="<%= @exec %>"
 USER_EXEC="<%= node[:resque_tng][:owner] %>"
 
 <% if @el -%>

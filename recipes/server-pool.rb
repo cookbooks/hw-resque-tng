@@ -5,7 +5,16 @@ unless(node[:resque_tng][:bundled])
 end
 
 if(node[:resque_tng][:redis][:ipaddress])
-
+  pool_exec = ''
+  pool_exec << "#{node[:resque_tng][:bundler_exec]} exec " if node[:resque_tng][:bundled]
+  if(node[:resque_tng][:bundled])
+    pool_exec << "#{File.basename(node[:resque_tng][:pool_exec])} "
+  else
+    pool_exec << "#{node[:resque_tng][:pool_exec]} "
+  end
+  pool_exec << "--environment #{node[:resque_tng][:environment]} "
+  pool_exec << "--pidfile #{node[:resque_tng][:pid_file]} "
+  
   directory File.dirname(node[:resque_tng][:pid_file]) do
     owner node[:resque_tng][:owner]
     group node[:resque_tng][:group]
@@ -18,10 +27,8 @@ if(node[:resque_tng][:redis][:ipaddress])
       variables(
         :app_name => 'resque-poool',
         :process_name => 'resque-pool',
-        :exec => "#{"#{node[:resque_tng][:bundler_exec]} exec " if node[:resque_tng][:bundled]}" <<
-          "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:pool_exec]) : node[:resque_tng][:pool_exec]} " <<
-          "--environment #{node[:resque_tng][:environment]} --pidfile #{node[:resque_tng][:pid_file]} " <<
-          "--daemon"
+        :daemonize => true,
+        :exec => pool_exec
       )
     end
     bluepill_service 'resque-pool' do
@@ -32,7 +39,8 @@ if(node[:resque_tng][:redis][:ipaddress])
     template '/etc/init.d/resque_pool' do
       source 'resque_pool.init.erb'
       variables(
-        :el => node.platform_family == 'redhat'
+        :el => node.platform_family == 'rhel',
+        :exec => pool_exec
       )
       mode 0755
     end

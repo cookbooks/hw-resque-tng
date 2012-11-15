@@ -7,11 +7,7 @@
 # Default-Start: 3 4 5
 # Default-Stop: 0 1 2 6
 
-START_EXEC="<%= 
-  "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
-  "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:pool_exec]) : node[:resque_tng][:exec]} " <<
-  "--environment #{node[:resque_tng][:environment]} --pidfile #{node[:resque_tng][:pid_file]}"
-%>"
+START_EXEC="<%= @exec %>"
 STOP_EXEC="pkill -f 'resque-pool-master'"
 USER_EXEC="<%= node[:resque_tng][:owner] %>"
 STATUS_EXEC="kill -0 `pgrep resque-pool-master &> /dev/null"

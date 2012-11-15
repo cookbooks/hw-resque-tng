@@ -1,5 +1,17 @@
 include_recipe 'resque-tng::server'
 
+web_exec = ''
+web_exec << "#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]
+if(node[:resque_tng][:bundled])
+  web_exec << "#{File.basename(node[:resque_tng][:web][:exec]} "
+else
+  web_exec << "#{node[:resque_tng][:web][:exec]} "
+end
+web_exec << "--env #{node[:resque_tng][:environment]} "
+web_exec << "--pid-file #{node[:resque_tng][:web][:pid_file]} "
+web_exec << "--port #{node[:resque_tng][:web][:port]} "
+web_exec << "#{"--server #{node[:resque_tng][:web][:server]}" if node[:resque_tng][:web][:server]}"
+
 if(node[:resque_tng][:web][:server] && !node[:resque_tng][:bundled])
   gem_package node[:resque_tng][:web][:server]
 end
@@ -11,11 +23,7 @@ if(node[:resque_tng][:web][:use_bluepill])
       :process_name => 'resque-web',
       :app_name => 'resque-web',
       :pid_file => node[:resque_tng][:web][:pid_file],
-      :exec => "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
-        "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:web][:exec]) : node[:resque_tng][:web][:exec]} " <<
-        "--env #{node[:resque_tng][:environment]} --pid-file #{node[:resque_tng][:web][:pid_file]} " <<
-        "--port #{node[:resque_tng][:web][:port]} " <<
-        "#{"--server #{node[:resque_tng][:web][:server]}" if node[:resque_tng][:web][:server]}"
+      :exec => web_exec
     )
   end
 
@@ -26,7 +34,8 @@ else
   template '/etc/init.d/resque_web' do
     source 'resque_web.init.erb'
     variables(
-      :el => node.platform_family == 'rhel'
+      :el => node.platform_family == 'rhel',
+      :exec => web_exec
     )
     mode 0755
   end
