@@ -1,0 +1,11 @@
+Bluepill.application('resque-scheduler') do |app|
+  app.process('resque-scheduler') do |process|
+    process.pid_file = '<%= node[:resque_tng][:pid_file] %>'
+    process.working_dir = '<%= node[:resque_tng][:app_dir] %>'
+    process.start_command = '<%=
+    %>'
+    process.start_grace_time = <%= node[:resque_tng][:bluepill][:start_time] %>.seconds
+    process.stop_grace_time = <%= node[:resque_tng][:bluepill][:stop_time] %>.seconds
+    process.restart_grace_time = <%= node[:resque_tng][:bluepill][:restart_time] %>.seconds
+  end
+end

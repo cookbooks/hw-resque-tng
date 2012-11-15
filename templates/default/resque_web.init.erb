@@ -1,0 +1,51 @@
+#
+# Author: Chris Roberts (<chris@hw-ops.com>)
+#
+# chkconfig: 345 99 1
+# Description: Resque pool
+# Provides: resque-web
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+
+START_EXEC="<%= 
+  "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
+  "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:web][:exec]) : node[:resque_tng][:web][:exec]} " <<
+  "--env #{node[:resque_tng][:environment]} --pid-file #{node[:resque_tng][:web][:pid_file]} " <<
+  "--port #{node[:resque_tng][:web][:port]} " <<
+  "#{"--server #{node[:resque_tng][:web][:server]}" if node[:resque_tng][:web][:server]}"
+%>"
+USER_EXEC="<%= node[:resque_tng][:owner] %>"
+
+<% if @el -%>
+source /etc/rc.d/init.d/functions
+PATH=$PATH:<%= node.languages.ruby.bin_dir %>
+<% end -%>
+
+<% if node[:resque_tng][:bundled] -%>
+[ -f <%= File.join(node[:resque_tng][:app_dir], 'Gemfile') %> ] || exit 1
+<% else -%>
+[ -x <%= node[:resque_tng][:web][:exec] %> ] || exit 1
+<% end -%>
+
+case "$1" in
+  start)
+    echo "Starting resque web"
+    cd <%= node[:resque_tng][:app_dir] %>
+    <% if @el -%>
+    daemon --user $USER_EXEC $START_EXEC
+    <% else -%>
+    start-stop-daemon --start --quiet --user $USER_EXEC --exec $START_EXEC
+    <% end -%>
+    ;;
+  stop)
+    echo "Stopping resque web"
+    kill `cat <%= node[:resque_tng][:web][:pid_file] %>`
+    ;;
+  status)
+    kill -0 `cat <%= node[:resque_tng][:web][:pid_file] %>` &> /dev/null
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 1
+    ;;
+esac

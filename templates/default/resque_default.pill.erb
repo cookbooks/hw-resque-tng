@@ -1,0 +1,15 @@
+Bluepill.application('<%= @app_name %>') do |app|
+  app.process('<%= @process_name %>') do |process|
+    process.pid_file = '<%= @pid_file || node[:resque_tng][:pid_file] %>'
+    process.working_dir = '<%= node[:resque_tng][:app_dir] %>'
+    <% if @daemonize -%>
+    process.daemonize = true
+    <% end -%>
+    process.uid = '<%= node[:resque_tng][:owner] %>'
+    process.gid = '<%= node[:resque_tng][:group] %>'
+    process.start_command = '<%= @exec %>'
+    process.start_grace_time = <%= node[:resque_tng][:bluepill][:start_time] %>.seconds
+    process.stop_grace_time = <%= node[:resque_tng][:bluepill][:stop_time] %>.seconds
+    process.restart_grace_time = <%= node[:resque_tng][:bluepill][:restart_time] %>.seconds
+  end
+end

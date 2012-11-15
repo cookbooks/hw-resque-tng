@@ -1,0 +1,50 @@
+#
+# Author: Chris Roberts (<chris@hw-ops.com>)
+#
+# chkconfig: 345 99 1
+# Description: Resque pool
+# Provides: resque-pool
+# Default-Start: 3 4 5
+# Default-Stop: 0 1 2 6
+
+START_EXEC="<%= 
+  "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
+  "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:pool_exec]) : node[:resque_tng][:exec]} " <<
+  "--environment #{node[:resque_tng][:environment]} --pidfile #{node[:resque_tng][:pid_file]}"
+%>"
+STOP_EXEC="pkill -f 'resque-pool-master'"
+USER_EXEC="<%= node[:resque_tng][:owner] %>"
+STATUS_EXEC="kill -0 `pgrep resque-pool-master &> /dev/null"
+
+<% if @el -%>
+source /etc/rc.d/init.d/functions
+<% end -%>
+
+<% if node[:resque_tng][:bundled] -%>
+  [ -f <%= File.join(node[:resque_tng][:app_dir], 'Gemfile') %> ] || exit 1
+<% else -%>
+  [ -x <%= node[:resque_tng][:pool_exec] %> ] || exit 1
+<% end -%>
+
+case "$1" in
+  start)
+    echo "Starting resque pool"
+    cd <%= node[:resque_tng][:app_dir] %>
+    <% if @el -%>
+    daemon --user $USER_EXEC $START_EXEC
+    <% else -%>
+    start-stop-daemon --start --quiet --user $USER_EXEC --exec $START_EXEC
+    <% end -%>
+    ;;
+  stop)
+    echo "Stopping resque pool"
+    $STOP_EXEC
+    ;;
+  status)
+    $STATUS_EXEC
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|status}"
+    exit 1
+    ;;
+esac

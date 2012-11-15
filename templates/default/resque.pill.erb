@@ -1,0 +1,20 @@
+Bluepill.application('resque') do |app|
+  <%= node[:resque_tng][:worker_count].to_i %>.times do |cnt|
+    app.process("resque_#{cnt}") do |process|
+      process.pid_file = File.join('<%= node[:resque_tng][:app_dir] %>', 'tmp', 'pids', "resque_worker.#{cnt}.pid")
+      process.working_dir = '<%= node[:resque_tng][:app_dir] %>'
+      process.daemonize = true
+      process.start_command = '<%=
+        "#{"#{node[:resque_tng][:bundler_exec]} exec" if node[:resque_tng][:bundled]} " <<
+        "#{node[:resque_tng][:bundled] ? File.basename(node[:resque_tng][:rake_exec]) : node[:resque_tng][:rake_exec]} " <<
+        "#{node[:resque_tng][:rake_task]} RACK_ENV=#{node[:resque_tng][:environment]} " <<
+        "RAILS_ENV=#{node[:resque_tng][:environment]} QUEUES=#{node[:resque_tng][:queues]}"
+      %>'
+      process.uid = '<%= node[:resque_tng][:owner] %>'
+      process.gid = '<%= node[:resque_tng][:group] %>'
+      process.start_grace_time = <%= node[:resque_tng][:bluepill][:start_time] %>.seconds
+      process.stop_grace_time = <%= node[:resque_tng][:bluepill][:stop_time] %>.seconds
+      process.restart_grace_time = <%= node[:resque_tng][:bluepill][:restart_time] %>.seconds
+    end
+  end
+end
